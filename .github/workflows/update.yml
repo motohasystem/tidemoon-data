@@ -1,0 +1,25 @@
+name: update tide data
+on:
+  schedule:
+    - cron: "0 3 5 1,7 *"      # 1月と7月の5日 12:00 JST（翌年分が出たら取り込む）
+  workflow_dispatch:
+    inputs:
+      station:
+        description: "地点記号（気象庁）"
+        default: "KM"
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python scripts/convert.py "${{ github.event.inputs.station || 'KM' }}"
+      - run: |
+          git config user.name "tide-bot"
+          git config user.email "tide-bot@users.noreply.github.com"
+          git add docs
+          git commit -m "update tide data $(date +%F)" || echo "no changes"
+          git push
